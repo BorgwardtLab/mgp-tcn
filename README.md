@@ -90,7 +90,7 @@ Depending on which part of the codebase you use, please also cite our main sourc
 "The MIMIC Code Repository: enabling reproducibility in critical care research." 
 Journal of the American Medical Informatics Association (2017): ocx084.](https://www.ncbi.nlm.nih.gov/pubmed/29036464)
 
-- We used Futoma's differentiable tensorflow implementation of the MGP as proposed in this paper.
+- We used Futoma et. al's differentiable tensorflow implementation of the MGP as proposed in this paper.
 [Futoma, Joseph, Sanjay Hariharan, and Katherine Heller. "Learning to detect sepsis with a multitask Gaussian process RNN classifier." Proceedings of the 34th International Conference on Machine Learning-Volume 70. JMLR. org, 2017.](https://arxiv.org/abs/1706.04152)
 
 
