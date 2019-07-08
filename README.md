@@ -32,19 +32,10 @@ The codebase is structured in three sequential steps:
  3. Experiments 
 
 
-## Query
+## Query and Experiment on sepsis data
 
 This repository provides a postgresql-pipeline to extract vital time series of sepsis cases and controls from the MIMIC database following the recent SEPSIS-3 definition.
  
-A large part of this code was inspired by this project: https://github.com/alistairewj/sepsis3-mimic. Some of their code reappears here modified, some basic scripts even untouched. A big thanks to their valuable contribution.
-Therefore, if you use this code please cite both them and us:
-
-Johnson, Alistair EW, David J. Stone, Leo A. Celi, and Tom J. Pollard. 
-"The MIMIC Code Repository: enabling reproducibility in critical care research." 
-Journal of the American Medical Informatics Association (2017): ocx084.
-
-Moor, M., Horn, M., Rieck, B., Roqueiro, D., & Borgwardt, K. (2019). Early Recognition of Sepsis with Gaussian Process Temporal Convolutional Networks and Dynamic Time Warping. arXiv preprint arXiv:1902.01659.
-
 1. Requirements for MIMIC:
   a) Requesting Access to MIMIC (publicly available, however with permission procedure)
       https://mimic.physionet.org/gettingstarted/access/
@@ -84,5 +75,22 @@ and run:
 
 for the queries, make sure you follow the mimic tutorial instructions for setting it up. We used
 - PostgreSQL 9.3.22 on x86_64-unknown-linux-gnu, compiled by gcc (Ubuntu 4.8.4-2ubuntu1~14.04.4) 4.8.4, 64-bit
+
+## Acknowledgements
+- Main contributors to this repo: Michael Moor, Max Horn.
+Please cite our corresponding paper: 
+[Moor, Michael, et al. "Early Recognition of Sepsis with Gaussian Process Temporal Convolutional Networks and Dynamic Time Warping." arXiv preprint arXiv:1902.01659 (2019).](https://arxiv.org/abs/1902.01659) 
+
+Depending on which part of the codebase you use, please also cite our main sources:
+
+- A large part of the query code was inspired by this project: https://github.com/alistairewj/sepsis3-mimic. Some of their code reappears here modified, some basic scripts even untouched. A big thanks to their valuable contribution.
+[Johnson, Alistair EW, David J. Stone, Leo A. Celi, and Tom J. Pollard. 
+"The MIMIC Code Repository: enabling reproducibility in critical care research." 
+Journal of the American Medical Informatics Association (2017): ocx084.](https://www.ncbi.nlm.nih.gov/pubmed/29036464)
+
+- We used Futoma's differentiable tensorflow implementation of the MGP as proposed in this paper.
+[Futoma, Joseph, Sanjay Hariharan, and Katherine Heller. "Learning to detect sepsis with a multitask Gaussian process RNN classifier." Proceedings of the 34th International Conference on Machine Learning-Volume 70. JMLR. org, 2017.](https://arxiv.org/abs/1706.04152)
+
+
 
 
