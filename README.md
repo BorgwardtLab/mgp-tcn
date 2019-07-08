@@ -4,8 +4,10 @@ This repository comprises code concerning sepsis prediction (code for labelling,
 
 [Moor, Michael, et al. "Early Recognition of Sepsis with Gaussian Process Temporal Convolutional Networks and Dynamic Time Warping." arXiv preprint arXiv:1902.01659 (2019).](https://arxiv.org/abs/1902.01659) 
 
+## Quick start on simulated data
+
 To get a quick start of our proposed method MGP-TCN (Multi-task Gaussian Process Adapted Temporal Convolutional Networks) 
-with simulated data simply run:
+with simulated data, simply run:
 
     $ make mock_data_results
 
@@ -32,7 +34,7 @@ The codebase is structured in three sequential steps:
  3. Experiments 
 
 
-## Query and Experiment on sepsis data
+## Query and real-world experiments
 
 This repository provides a postgresql-pipeline to extract vital time series of sepsis cases and controls from the MIMIC database following the recent SEPSIS-3 definition.
  
@@ -77,7 +79,7 @@ for the queries, make sure you follow the mimic tutorial instructions for settin
 - PostgreSQL 9.3.22 on x86_64-unknown-linux-gnu, compiled by gcc (Ubuntu 4.8.4-2ubuntu1~14.04.4) 4.8.4, 64-bit
 
 ## Acknowledgements
-- Main contributors to this repo: Michael Moor, Max Horn.
+- Contributors of this repo: Michael Moor, Max Horn, Damian Roqueiro.
 Please cite our corresponding paper: 
 [Moor, Michael, et al. "Early Recognition of Sepsis with Gaussian Process Temporal Convolutional Networks and Dynamic Time Warping." arXiv preprint arXiv:1902.01659 (2019).](https://arxiv.org/abs/1902.01659) 
 
