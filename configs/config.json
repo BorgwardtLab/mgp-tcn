@@ -1,0 +1,39 @@
+{
+  "L1_penalty": 0,
+  "L2_penalty": null,
+  "add_diag": 0.1,
+  "batch_size": 100,
+  "dataset": {
+    "data_sources": [
+      "labs",
+      "vitals",
+      "covs"
+    ],
+    "datapath": "output/",
+    "horizon": 0,
+    "lab_vitals_only": true,
+    "max_length": 200,
+    "min_length": 7,
+    "min_pad_length": 8,
+    "na_thres": 500,
+    "num_obs_thres": 10000,
+    "overwrite": 0,
+    "split": 0
+  },
+  "decay_learning_rate": false,
+  "decomposition_method": "chol",
+  "drop_first_res": false,
+  "dropout": 0.1,
+  "kernel_size": 4,
+  "l1_filter_reg": null,
+  "learning_rate": 0.001,
+  "levels": 4,
+  "losstype": "weighted",
+  "n_hidden": 40,
+  "n_mc_smps": 10,
+  "pad_before": false,
+  "reduction_dim": null,
+  "seed": 31325126,
+  "time_reset": 0,
+  "training_iters": 30
+}
