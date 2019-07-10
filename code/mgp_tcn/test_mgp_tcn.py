@@ -110,7 +110,7 @@ def compute_global_l2():
 
     return L2_per_weight
 
-#Sim dataset functions from mgp_rnn_fit.py (jfutoma)
+#Sim dataset functions from mgp_tcn_fit.py (jfutoma)
 def gen_MGP_params(M, rs):
     """
     Generate some MGP params for each class. 
@@ -154,14 +154,14 @@ def sim_dataset(rs, num_encs,M,n_covs,n_meds,pos_class_rate = 0.5,trainfrac=0.2)
     num_obs_times = np.random.poisson(end_times,num_encs)+3 #number of observation time points per encounter, increase with  longer series 
     num_obs_values = np.array(num_obs_times*M*trainfrac,dtype="int")
     #number of inputs to RNN. will be a grid on integers, starting at 0 and ending at next integer after end_time
-    num_rnn_grid_times = np.array(np.floor(end_times)+1,dtype="int") 
-    rnn_grid_times = []
+    num_tcn_grid_times = np.array(np.floor(end_times)+1,dtype="int") 
+    tcn_grid_times = []
     labels = rs.binomial(1,pos_class_rate,num_encs)                      
     
     T = [];  #actual observation times
     Y = []; ind_kf = []; ind_kt = [] #actual data; indices pointing to which lab, which time
     baseline_covs = np.zeros((num_encs,n_covs)) 
-    #each contains an array of size num_rnn_grid_times x n_meds 
+    #each contains an array of size num_tcn_grid_times x n_meds 
     #   simulates a matrix of indicators, where each tells which meds have been given between the
     #   previous grid time and the current.  in practice you will have actual medication administration 
     #   times and will need to convert to this form, for feeding into the RNN
@@ -176,23 +176,23 @@ def sim_dataset(rs, num_encs,M,n_covs,n_meds,pos_class_rate = 0.5,trainfrac=0.2)
         l = labels[i]
         y_i,ind_kf_i,ind_kt_i = sim_multitask_GP(obs_times,true_lengths[l],true_noises[l],true_Kfs[l],trainfrac)
         Y.append(y_i); ind_kf.append(ind_kf_i); ind_kt.append(ind_kt_i)
-        rnn_grid_times.append(np.arange(num_rnn_grid_times[i]))
+        tcn_grid_times.append(np.arange(num_tcn_grid_times[i]))
         if l==0: #sim some different baseline covs; meds for 2 classes
             baseline_covs[i,:int(n_covs/2)] = rs.normal(0.1,1.0,int(n_covs/2))
             baseline_covs[i,int(n_covs/2):] = rs.binomial(1,0.2,int(n_covs/2))
-            meds = rs.binomial(1,.02,(num_rnn_grid_times[i],n_meds))
+            meds = rs.binomial(1,.02,(num_tcn_grid_times[i],n_meds))
         else:
             baseline_covs[i,:int(n_covs/2)] = rs.normal(0.2,1.0,int(n_covs/2))
             baseline_covs[i,int(n_covs/2):] = rs.binomial(1,0.1,int(n_covs/2))
-            meds = rs.binomial(1,.04,(num_rnn_grid_times[i],n_meds))
+            meds = rs.binomial(1,.04,(num_tcn_grid_times[i],n_meds))
         meds_on_grid.append(meds)
     
     T = np.array(T)
     Y = np.array(Y); ind_kf = np.array(ind_kf); ind_kt = np.array(ind_kt)
     meds_on_grid = np.array(meds_on_grid)
-    rnn_grid_times = np.array(rnn_grid_times)
+    tcn_grid_times = np.array(tcn_grid_times)
     
-    return (num_obs_times,num_obs_values,num_rnn_grid_times,rnn_grid_times,
+    return (num_obs_times,num_obs_values,num_tcn_grid_times,tcn_grid_times,
             labels,T,Y,ind_kf,ind_kt,meds_on_grid,baseline_covs)
     
 def sim_multitask_GP(times,length,noise_vars,K_f,trainfrac):
@@ -280,17 +280,17 @@ def reset_times(train_data,validation_data,test_data):
     for dataset in [train, val, test]:
         
         times = dataset[1].copy()
-        num_rnn_grid_times = []
-        rnn_grid_times = []
+        num_tcn_grid_times = []
+        tcn_grid_times = []
         for i in range(len(times)):
             times[i] = times[i]-min(times[i])
             end_time = times[i][-1]
-            num_rnn_grid_time = int(np.floor(end_time)+1)
-            num_rnn_grid_times.append(num_rnn_grid_time)
-            rnn_grid_times.append(np.arange(num_rnn_grid_time))
+            num_tcn_grid_time = int(np.floor(end_time)+1)
+            num_tcn_grid_times.append(num_tcn_grid_time)
+            tcn_grid_times.append(np.arange(num_tcn_grid_time))
         dataset[1] = times
-        dataset[5] = np.array(num_rnn_grid_times)
-        dataset[6] = np.array(rnn_grid_times)
+        dataset[5] = np.array(num_tcn_grid_times)
+        dataset[6] = np.array(tcn_grid_times)
 
     return train, val, test    
 
@@ -307,7 +307,7 @@ def draw_GP(Yi,Ti,Xi,ind_kfi,ind_kti,method, gp_params):
         length,noises,Lf,Kf: GP params
         Yi: observation values
         Ti: observation times
-        Xi: grid points (new times for rnn)
+        Xi: grid points (new times for tcn)
         ind_kfi,ind_kti: indices into Y
     returns:
         draws from the GP at the evenly spaced grid times Xi, given hyperparams and data
@@ -391,16 +391,11 @@ def draw_GP(Yi,Ti,Xi,ind_kfi,ind_kti,method, gp_params):
         #print('cg draw shape:')
         #print(draw_reshape.shape)   
 
-    #TODO: it's worth testing to see at what point computation speedup of Lanczos algorithm is useful & needed.
-    # For smaller examples, using Cholesky will probably be faster than this unoptimized Lanczos implementation.
-    # Likewise for CG and BCG vs just taking the Cholesky of Ky once
-    
-    #draw_reshape = tf.transpose(tf.reshape(tf.transpose(draw),[n_mc_smps,M,nx]),perm=[0,2,1])
     return draw_reshape    
 
 @ex.capture        
 def get_GP_samples(Y,T,X,ind_kf,ind_kt,num_obs_times,num_obs_values,
-                   num_rnn_grid_times, cov_grid, input_dim,method, gp_params, lab_vitals_only, pad_before): ##,med_cov_grid
+                   num_tcn_grid_times, cov_grid, input_dim,method, gp_params, lab_vitals_only, pad_before): ##,med_cov_grid
     """
     returns samples from GP at evenly-spaced gridpoints
     """ 
@@ -420,8 +415,8 @@ def get_GP_samples(Y,T,X,ind_kf,ind_kt,num_obs_times,num_obs_values,
         Ti = tf.reshape(tf.slice(T,[i,0],[1,num_obs_times[i]]),[-1])
         ind_kfi = tf.reshape(tf.slice(ind_kf,[i,0],[1,num_obs_values[i]]),[-1])
         ind_kti = tf.reshape(tf.slice(ind_kt,[i,0],[1,num_obs_values[i]]),[-1])
-        Xi = tf.reshape(tf.slice(X,[i,0],[1,num_rnn_grid_times[i]]),[-1])
-        X_len = num_rnn_grid_times[i]
+        Xi = tf.reshape(tf.slice(X,[i,0],[1,num_tcn_grid_times[i]]),[-1])
+        X_len = num_tcn_grid_times[i]
                 
         GP_draws = draw_GP(Yi,Ti,Xi,ind_kfi,ind_kti,method=method, gp_params=gp_params)
         pad_len = grid_max-X_len #pad by this much
@@ -449,10 +444,9 @@ def get_GP_samples(Y,T,X,ind_kf,ind_kt,num_obs_times,num_obs_values,
 
     return Z
 
-# TODO: MODIFY THIS FUNCTION FOR TCNs
 @ex.capture
 def get_preds(Y,T,X,ind_kf,ind_kt,num_obs_times,num_obs_values,
-              num_rnn_grid_times, cov_grid, input_dim,method, gp_params, tcn, is_training, n_classes, lab_vitals_only, pad_before, losstype): #med_cov_grid
+              num_tcn_grid_times, cov_grid, input_dim,method, gp_params, tcn, is_training, n_classes, lab_vitals_only, pad_before, losstype): #med_cov_grid
     """
     helper function. takes in (padded) raw datas, samples MGP for each observation, 
     then feeds it all through the TCN to get predictions.
@@ -460,18 +454,19 @@ def get_preds(Y,T,X,ind_kf,ind_kt,num_obs_times,num_obs_values,
     inputs:
         Y: array of observation values (labs/vitals). batchsize x batch_maxlen_y
         T: array of observation times (times during encounter). batchsize x batch_maxlen_t
+        X: array of grid points. batchsize x batch_maxgridlen 
         ind_kf: indiceste into each row of Y, pointing towards which lab/vital. same size as Y
         ind_kt: indices into each row of Y, pointing towards which time. same size as Y
         num_obs_times: number of times observed for each encounter; how long each row of T really is
         num_obs_values: number of lab values observed per encounter; how long each row of Y really is
-        num_rnn_grid_times: length of even spaced RNN grid per encounter
+        num_tcn_grid_times: length of even spaced RNN grid per encounter
                     
     returns:
         predictions (unnormalized log probabilities) for each MC sample of each obs
     """
     
     Z = get_GP_samples(Y,T,X,ind_kf,ind_kt,num_obs_times,num_obs_values,
-                       num_rnn_grid_times, cov_grid, input_dim, method=method, gp_params=gp_params, lab_vitals_only=lab_vitals_only, pad_before=pad_before) #batchsize*num_MC x batch_maxseqlen x num_inputs    ##,med_cov_grid
+                       num_tcn_grid_times, cov_grid, input_dim, method=method, gp_params=gp_params, lab_vitals_only=lab_vitals_only, pad_before=pad_before) #batchsize*num_MC x batch_maxseqlen x num_inputs    ##,med_cov_grid
     Z.set_shape([None,None,input_dim]) #somehow lost shape info, but need this
     N = tf.shape(T)[0] #number of observations 
     
@@ -483,10 +478,10 @@ def get_preds(Y,T,X,ind_kf,ind_kt,num_obs_times,num_obs_values,
     ) # reuse should be true if losstype is average
 
     '''#duplicate each entry of seqlens, to account for multiple MC samples per observation 
-    seqlen_dupe = tf.reshape(tf.tile(tf.expand_dims(num_rnn_grid_times,1),[1,gp_params.n_mc_smps]),[N*gp_params.n_mc_smps])
+    seqlen_dupe = tf.reshape(tf.tile(tf.expand_dims(num_tcn_grid_times,1),[1,gp_params.n_mc_smps]),[N*gp_params.n_mc_smps])
 
     #with tf.variable_scope("",reuse=True):
-    outputs, states = tf.nn.dynamic_rnn(cell=stacked_lstm,inputs=Z,
+    outputs, states = tf.nn.dynamic_tcn(cell=stacked_lstm,inputs=Z,
                                             dtype=tf.float32,
                                             sequence_length=seqlen_dupe)
     
@@ -499,7 +494,7 @@ def get_preds(Y,T,X,ind_kf,ind_kt,num_obs_times,num_obs_values,
 
 @ex.capture
 def get_losses(Y,T,X,ind_kf,ind_kt,num_obs_times,num_obs_values,
-              num_rnn_grid_times, cov_grid, input_dim,method, gp_params, tcn, is_training, n_classes, lab_vitals_only, pad_before,
+              num_tcn_grid_times, cov_grid, input_dim,method, gp_params, tcn, is_training, n_classes, lab_vitals_only, pad_before,
               labels, pos_weight): #med_cov_grid
     """
     helper function. takes in (padded) raw datas, samples MGP for each observation, 
@@ -512,14 +507,14 @@ def get_losses(Y,T,X,ind_kf,ind_kt,num_obs_times,num_obs_values,
         ind_kt: indices into each row of Y, pointing towards which time. same size as Y
         num_obs_times: number of times observed for each encounter; how long each row of T really is
         num_obs_values: number of lab values observed per encounter; how long each row of Y really is
-        num_rnn_grid_times: length of even spaced RNN grid per encounter
+        num_tcn_grid_times: length of even spaced RNN grid per encounter
                     
     returns:
         predictions (unnormalized log probabilities) for each MC sample of each obs
     """
     
     Z = get_GP_samples(Y,T,X,ind_kf,ind_kt,num_obs_times,num_obs_values,
-                       num_rnn_grid_times, cov_grid, input_dim, method=method, gp_params=gp_params, lab_vitals_only=lab_vitals_only, pad_before=pad_before) #batchsize*num_MC x batch_maxseqlen x num_inputs    ##,med_cov_grid
+                       num_tcn_grid_times, cov_grid, input_dim, method=method, gp_params=gp_params, lab_vitals_only=lab_vitals_only, pad_before=pad_before) #batchsize*num_MC x batch_maxseqlen x num_inputs    ##,med_cov_grid
     Z.set_shape([None,None,input_dim]) #somehow lost shape info, but need this
     N = tf.shape(Z)[0] #number of observations 
 
@@ -571,7 +566,7 @@ def get_probs_and_accuracy(preds, O, n_mc_smps):
 
 
 @ex.config
-def mpg_rnn_config():
+def mpg_tcn_config():
     dataset = {
         'na_thres': 500, #30,100 numb of non-nans a variable must show in prepro for not being dropped (for dropping too rarely sampled variables)
         'datapath': 'output/',
@@ -639,7 +634,7 @@ def fit_mgp_tcn(decomposition_method, add_diag, losstype, n_hidden, levels, kern
     n_covs=0
     n_meds=0
     
-    (num_obs_times,num_obs_values,num_rnn_grid_times,rnn_grid_times,labels,times,
+    (num_obs_times,num_obs_values,num_tcn_grid_times,tcn_grid_times,labels,times,
        values,ind_lvs,ind_times,meds_on_grid,covs) = sim_dataset(rs, num_encs,M,n_covs,n_meds)
         
     N_tot = len(labels) #total encounters
@@ -659,8 +654,8 @@ def fit_mgp_tcn(decomposition_method, add_diag, losstype, n_hidden, levels, kern
     ind_times_tr = ind_times[tr_ind]; ind_times_va = ind_times[va_ind]
     num_obs_times_tr = num_obs_times[tr_ind]; num_obs_times_va = num_obs_times[va_ind]
     num_obs_values_tr = num_obs_values[tr_ind]; num_obs_values_va = num_obs_values[va_ind]
-    rnn_grid_times_tr = rnn_grid_times[tr_ind]; rnn_grid_times_va = rnn_grid_times[va_ind]     
-    num_rnn_grid_times_tr = num_rnn_grid_times[tr_ind]; num_rnn_grid_times_va = num_rnn_grid_times[va_ind]  
+    tcn_grid_times_tr = tcn_grid_times[tr_ind]; tcn_grid_times_va = tcn_grid_times[va_ind]     
+    num_tcn_grid_times_tr = num_tcn_grid_times[tr_ind]; num_tcn_grid_times_va = num_tcn_grid_times[va_ind]  
 
     # Load dataset
     #train_data, validation_data, test_data, variables = get_dataset()
@@ -730,7 +725,7 @@ def fit_mgp_tcn(decomposition_method, add_diag, losstype, n_hidden, levels, kern
     O = tf.placeholder(tf.int32, [None]) #labels. input is NOT as one-hot encoding; convert at each iter
     num_obs_times = tf.placeholder(tf.int32, [None]) #number of observation times per encounter 
     num_obs_values = tf.placeholder(tf.int32, [None]) #number of observation values per encounter 
-    num_rnn_grid_times = tf.placeholder(tf.int32, [None]) #length of each grid to be fed into RNN in batch
+    num_tcn_grid_times = tf.placeholder(tf.int32, [None]) #length of each grid to be fed into RNN in batch
     
     N = tf.shape(Y)[0]                         
                                                                                                                                                                                       
@@ -756,12 +751,12 @@ def fit_mgp_tcn(decomposition_method, add_diag, losstype, n_hidden, levels, kern
 
     ##### Get predictions and feed into optimization
     if losstype=='average':
-        losses = get_losses(Y,T,X,ind_kf,ind_kt,num_obs_times,num_obs_values,num_rnn_grid_times, cov_grid, input_dim,
+        losses = get_losses(Y,T,X,ind_kf,ind_kt,num_obs_times,num_obs_values,num_tcn_grid_times, cov_grid, input_dim,
                       method=method, gp_params=gp_params, tcn=tcn, is_training=is_training, n_classes=n_classes, lab_vitals_only=lab_vitals_only, pad_before=pad_before,
                       labels=O_dupe_onehot, pos_weight=class_imb)
         loss_fit = tf.reduce_sum(losses)
     
-    preds = get_preds(Y,T,X,ind_kf,ind_kt,num_obs_times,num_obs_values,num_rnn_grid_times, cov_grid, input_dim,
+    preds = get_preds(Y,T,X,ind_kf,ind_kt,num_obs_times,num_obs_values,num_tcn_grid_times, cov_grid, input_dim,
                       method=method, gp_params=gp_params, tcn=tcn, is_training=is_training, n_classes=n_classes, lab_vitals_only=lab_vitals_only, pad_before=pad_before, losstype=losstype)    #med_cov_grid
     probs,accuracy = get_probs_and_accuracy(preds,O)
     
@@ -809,7 +804,7 @@ def fit_mgp_tcn(decomposition_method, add_diag, losstype, n_hidden, levels, kern
     #here: initial position of validation padding..
     T_pad_va, Y_pad_va, ind_kf_pad_va, ind_kt_pad_va, X_pad_va, cov_pad_va = pad_rawdata_nomed(
         times_va, values_va, ind_lvs_va, ind_times_va,
-        rnn_grid_times_va, covs_va, num_rnn_grid_times_va, min_pad_length)
+        tcn_grid_times_va, covs_va, num_tcn_grid_times_va, min_pad_length)
 
     ##### Main training loop
     saver = tf.train.Saver(max_to_keep = None)
@@ -835,12 +830,12 @@ def fit_mgp_tcn(decomposition_method, add_diag, losstype, n_hidden, levels, kern
             inds = perm[s:e]
             T_pad,Y_pad,ind_kf_pad,ind_kt_pad,X_pad, cov_pad = pad_rawdata_nomed(
                     times_tr[inds],values_tr[inds],ind_lvs_tr[inds],ind_times_tr[inds],
-                    rnn_grid_times_tr[inds], covs_tr[inds,:], num_rnn_grid_times_tr[inds], min_pad_length) ## meds_on_grid_tr[inds],covs_tr[inds,:]
+                    tcn_grid_times_tr[inds], covs_tr[inds,:], num_tcn_grid_times_tr[inds], min_pad_length) ## meds_on_grid_tr[inds],covs_tr[inds,:]
 
             feed_dict={Y:Y_pad,T:T_pad,ind_kf:ind_kf_pad,ind_kt:ind_kt_pad,X:X_pad, cov_grid:cov_pad,
                num_obs_times:num_obs_times_tr[inds],
                num_obs_values:num_obs_values_tr[inds],
-               num_rnn_grid_times:num_rnn_grid_times_tr[inds],O:labels_tr[inds], is_training: True} ##med_cov_grid:meds_cov_pad,                        
+               num_tcn_grid_times:num_tcn_grid_times_tr[inds],O:labels_tr[inds], is_training: True} ##med_cov_grid:meds_cov_pad,                        
 
             try:        
                 loss_,_ = sess.run([loss,train_op],feed_dict, options=run_options)
@@ -872,7 +867,7 @@ def fit_mgp_tcn(decomposition_method, add_diag, losstype, n_hidden, levels, kern
                     va_feed_dict={Y:Y_pad_va[va_inds,:], T:T_pad_va[va_inds,:], ind_kf:ind_kf_pad_va[va_inds,:], 
                                 ind_kt:ind_kt_pad_va[va_inds,:], X:X_pad_va[va_inds,:],
                                 cov_grid:cov_pad_va[va_inds,:,:], num_obs_times:num_obs_times_va[va_inds],
-                                num_obs_values:num_obs_values_va[va_inds], num_rnn_grid_times:num_rnn_grid_times_va[va_inds],
+                                num_obs_values:num_obs_values_va[va_inds], num_tcn_grid_times:num_tcn_grid_times_va[va_inds],
                                 O:labels_va[va_inds], is_training: False}
                                                           
                     try:        
