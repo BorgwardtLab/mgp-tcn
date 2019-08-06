@@ -2,7 +2,7 @@
 
 This repository comprises code concerning sepsis prediction (code for labelling, extraction and proposed method) of the Paper: 
 
-[Moor, M., Horn, M., Rieck, B., Roqueiro, D., & Borgwardt, K. (2019). Temporal convolutional networks and dynamic time warping can drastically improve the early prediction of sepsis. arXiv preprint arXiv:1902.01659.](https://arxiv.org/abs/1902.01659) 
+[Moor, M., Horn, M., Rieck, B., Roqueiro, D., & Borgwardt, K. (2019). Early Recognition of Sepsis with Gaussian Process Temporal Convolutional Networks and Dynamic Time Warping. arXiv preprint arXiv:1902.01659.](https://arxiv.org/abs/1902.01659) 
 
 ## Quick start on simulated data
 
