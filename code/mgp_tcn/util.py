@@ -3,7 +3,7 @@
 """
 Some useful functions.
 
---> MGP related utils by josephfutoma 2017
+--> MGP utils by josephfutoma 2017
 """
 import tensorflow as tf
 import numpy as np
