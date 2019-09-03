@@ -17,13 +17,13 @@ MYSQL_USER := <Username>
 all: query run_experiments
 
 mock_data_results:
-	python3 -m code.mgp_tcn.test_mgp_tcn -F $@
+	python3 -m src.mgp_tcn.test_mgp_tcn -F $@
 	@mv $@/1/* $@
 	@rm -r $@/1
 
 query:
 	echo Runnung query...
-	cd code/query && ./main.sh $(MYSQL_DATABASE) $(MYSQL_USER)
+	cd src/query && ./main.sh $(MYSQL_DATABASE) $(MYSQL_USER)
 
 run_experiments: $(EXPERIMENT_TARGETS)
 	echo $(CONFIG_FILES)
@@ -33,6 +33,6 @@ run_experiments: $(EXPERIMENT_TARGETS)
 $(EXPERIMENTS_PATH)/%: $(CONFIG_FILES_PATH)/%.json
 	@echo Running config file $<
 	@-mkdir -p $@
-	python3 -m code.mgp_tcn.mgp_tcn_fit -p -F $@ with $<
+	python3 -m src.mgp_tcn.mgp_tcn_fit -p -F $@ with $<
 	@mv $@/1/* $@
 	@rm -r $@/1

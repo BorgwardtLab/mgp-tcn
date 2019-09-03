@@ -1,0 +1,4 @@
+- This directory lists all query scripts.
+- You can run the entire query pipeline by invoking >source main.sh
+- drop_all.sql removes all views and tables created here, such that a
+  different user may create them 
