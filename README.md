@@ -61,6 +61,9 @@ This repository provides a postgresql-pipeline to extract vital time series of s
     c) Given the query was executed before and you wish to execute an mgp-tcn experiment (as configured in configs), use:
 
         $ make run_experiments    
+    
+    d) For running an experiment with the exact hyperparameters we found in our hyperparameter search, use one of the configs in paper_configs like this:
+        $ python3 -m src.mgp_tcn.mgp_tcn_fit with configs/paper_configs/config_split0.json
 
     Note: 
 	- This step might take several hours as the rather involved query is highly relational and therefore easier to perform in postgresql rather than processing all data in a dynamic environment.
