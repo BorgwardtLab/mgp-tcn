@@ -63,6 +63,7 @@ This repository provides a postgresql-pipeline to extract vital time series of s
         $ make run_experiments    
     
     d) For running an experiment with the exact hyperparameters we found in our hyperparameter search, use one of the configs in paper_configs like this:
+        
         $ python3 -m src.mgp_tcn.mgp_tcn_fit with configs/paper_configs/config_split0.json
 
     Note: 
