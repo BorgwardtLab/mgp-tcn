@@ -1,4 +1,4 @@
-# Sepsis prediction on MIMIC dataset
+# MGP-TCN for Sepsis Prediction on the MIMIC Dataset
 
 This repository comprises code concerning sepsis prediction (code for labelling, extraction and proposed method) of the Paper: 
 
