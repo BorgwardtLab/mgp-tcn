@@ -2,7 +2,19 @@
 
 This repository comprises code concerning sepsis prediction (code for labelling, extraction and proposed method) of the Paper: 
 
-[Moor, M., Horn, M., Rieck, B., Roqueiro, D., & Borgwardt, K. (2019). Early Recognition of Sepsis with Gaussian Process Temporal Convolutional Networks and Dynamic Time Warping. arXiv preprint arXiv:1902.01659.](https://arxiv.org/abs/1902.01659) 
+```
+@InProceedings{moor2019early,
+  title		=	{Early Recognition of Sepsis with Gaussian Process Temporal Convolutional Networks and Dynamic Time Warping},
+  author	=	{Moor, Michael and Horn, Max and Rieck, Bastian and Roqueiro, Damian and Borgwardt, Karsten},
+  booktitle	=	{Proceedings of the 4th Machine Learning for Healthcare Conference},
+  pages		=	{2--26},
+  series        = 	{Proceedings of Machine Learning Research},
+  publisher     = 	{PMLR},
+  year		=	{2019}
+}
+```
+
+[Moor, M., Horn, M., Rieck, B., Roqueiro, D., & Borgwardt, K. (2019). Early Recognition of Sepsis with Gaussian Process Temporal Convolutional Networks and Dynamic Time Warping. arXiv preprint arXiv:1902.01659.](http://proceedings.mlr.press/v106/moor19a/moor19a.pdf) 
 
 ## Quick start on simulated data
 
@@ -85,7 +97,7 @@ for the queries, make sure you follow the mimic tutorial instructions for settin
 ## Acknowledgements
 - Contributors of this repo: Michael Moor, Max Horn, Damian Roqueiro.
 Please cite our corresponding paper: 
-[Moor, M., Horn, M., Rieck, B., Roqueiro, D., & Borgwardt, K. (2019). Early Recognition of Sepsis with Gaussian Process Temporal Convolutional Networks and Dynamic Time Warping. arXiv preprint arXiv:1902.01659.](https://arxiv.org/abs/1902.01659) 
+[Moor, M., Horn, M., Rieck, B., Roqueiro, D., & Borgwardt, K. (2019). Early Recognition of Sepsis with Gaussian Process Temporal Convolutional Networks and Dynamic Time Warping. arXiv preprint arXiv:1902.01659.](http://proceedings.mlr.press/v106/moor19a/moor19a.pdf) 
 
 Depending on which part of the codebase you use, please also cite our main sources:
 
